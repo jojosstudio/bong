@@ -9,7 +9,6 @@
   --bg:#0c0f13; --text:#e9eef6; --muted:#9fb0c2;
   --accent:#59dbc9; --border:rgba(255,255,255,0.14);
   --glass:rgba(255,255,255,0.06); --blur:14px;
-  --ok:#44d19e; --warn:#ffcc66; --err:#ff7a7a;
 }
 html,body{
   height:100%; margin:0;
@@ -21,7 +20,7 @@ html,body{
   min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px;
 }
 .card{
-  width:min(520px, 94vw);
+  width:min(480px, 94vw);
   border-radius:20px; border:1px solid var(--border);
   background: linear-gradient(180deg, var(--glass), rgba(255,255,255,0.04));
   backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur));
@@ -30,9 +29,6 @@ html,body{
 .inner{ padding:20px; }
 h1{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.2px; }
 .sub{ margin:0 0 16px; color:var(--muted); font-size:12px; }
-
-.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
-
 #qrWrap{
   background:#ffffff;
   border:1px solid var(--border);
@@ -42,7 +38,7 @@ h1{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.2px; }
   aspect-ratio:1 / 1;
   margin: 0 auto;
   overflow:hidden;
-  padding: 10px; /* gleichmäßiger Weißrand */
+  padding: 0;
   box-sizing: border-box;
 }
 #qrCanvas{
@@ -50,57 +46,17 @@ h1{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.2px; }
   height: 100%;
   display: block;
 }
-
 .badge{
   display:inline-flex; align-items:center; gap:8px;
   padding:8px 12px; border-radius:999px;
   border:1px solid var(--border); background:rgba(255,255,255,.06);
 }
-.mono{ font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-
 .btn{
   border:1px solid var(--border); border-radius:12px;
   background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
   color:var(--text); padding:10px 14px; font-weight:600; cursor:pointer;
-  transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
 }
-.btn:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(89,219,201,.15) inset; border-color: rgba(89,219,201,.35); }
-.btn:active{ transform: translateY(0); }
-
 .small{ font-size:12px; color:var(--muted); text-align:center; margin-top:10px; }
-
-/* Guthaben Block */
-.panel{
-  margin-top:16px; padding:12px;
-  border-radius:14px; border:1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-}
-.panel h2{ margin:0 0 8px; font-size:14px; }
-.kvs{ display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; }
-.kv{ display:flex; gap:8px; align-items:center; }
-.kv .label{ color:var(--muted); font-size:12px; }
-.kv .value{ font-size:14px; }
-.status{ font-size:12px; color:var(--muted); margin-top:6px; }
-.dot{
-  width:8px; height:8px; border-radius:999px; display:inline-block;
-  background:var(--muted);
-}
-.dot.ok{ background:var(--ok); box-shadow:0 0 10px rgba(68,209,158,.6); }
-.dot.warn{ background:var(--warn); box-shadow:0 0 10px rgba(255,204,102,.6); }
-.dot.err{ background:var(--err); box-shadow:0 0 10px rgba(255,122,122,.6); }
-
-/* Toast */
-.toast{
-  position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: 20px; padding:10px 14px; border-radius:10px;
-  border:1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
-  backdrop-filter: blur(10px);
-  color: var(--text);
-  font-size: 13px;
-  opacity: 0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
-}
-.toast.show{ opacity: 1; transform: translateX(-50%) translateY(-4px); }
 </style>
 </head>
 <body>
@@ -111,38 +67,12 @@ h1{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.2px; }
       <p class="sub">Zeige diesen QR an der Kasse. Die Nummer bleibt auf diesem Gerät immer gleich.</p>
 
       <div id="qrWrap">
-        <canvas id="qrCanvas" width="320" height="320"></canvas>
+        <canvas id="qrCanvas"></canvas>
       </div>
 
       <div class="row">
-        <span class="badge mono">ID: <span id="idText">—</span></span>
+        <span class="badge">ID: <span id="idText">—</span></span>
         <button class="btn" id="btnCopy">Nummer kopieren</button>
-      </div>
-
-      <!-- Live Guthaben -->
-      <div class="panel" id="walletPanel">
-        <h2>Dein Guthaben</h2>
-        <div class="kvs">
-          <div class="kv">
-            <span class="label">Kontostand</span>
-          </div>
-          <div class="kv">
-            <span class="value mono" id="balance">—</span>
-          </div>
-
-          <div class="kv">
-            <span class="label">Typ</span>
-          </div>
-          <div class="kv">
-            <span class="value" id="idType">—</span>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button class="btn" id="btnReload">Neu laden</button> 
-          <span class="badge" id="autoInfo"><span class="dot" id="autoDot"></span><span id="autoText" class="small">Auto-Refresh: aus</span></span>
-        </div>
-        <div class="status" id="status">Bereit.</div>
-        <pre id="raw" class="panel mono" style="display:none; max-height:180px; overflow:auto; margin-top:10px;"></pre>
       </div>
 
       <p class="small">Hinweis: Diese Seite speichert deine 10‑stellige ID lokal im Browser (localStorage). Beim ersten Öffnen wird eine ID erzeugt.</p>
@@ -150,219 +80,48 @@ h1{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.2px; }
   </div>
 </div>
 
-<div class="toast" id="toast">Kopiert</div>
-
 <script>
-// ===== Util: Toast =====
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._hide);
-  t._hide = setTimeout(()=> t.classList.remove('show'), 1600);
-}
-
-// ===== ID Erzeugung =====
-function generateId10(){
-  let arr = new Uint32Array(5);
-  if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(arr);
-  let n = '';
-  for(let i=0; i<9; i++){
-    const v = arr[Math.floor(i/2)] ?? Math.floor(Math.random()*4294967296);
-    n += String(v % 10);
-  }
-  let sum = 0, w = 2;
-  for(let i=n.length-1; i>=0; i--){
-    sum += Number(n[i]) * w;
-    w = w === 10 ? 2 : w+1;
-  }
-  const check = sum % 11 % 10;
-  return (n + String(check)).padStart(10,'0');
-}
+// Persistente 10-stellige ID
 function loadOrCreateId(){
   let id = localStorage.getItem('customer_id_10');
-  if(!id || !/^\d{10}$/.test(id)){
-    id = generateId10();
+  if(!id){
+    id = Math.floor(Math.random()*1e10).toString().padStart(10,'0');
     localStorage.setItem('customer_id_10', id);
   }
   return id;
 }
 
-// ===== QR Code (Canvas) =====
-function drawQRCodeToCanvas(canvas, text){
-  if(!window.QRCode){
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    s.onload = ()=> drawOnCanvas();
-    document.head.appendChild(s);
-  }else{
-    drawOnCanvas();
+// QR-Renderer (CDN qrcodejs)
+window.SimpleQR = {
+  renderCanvas: function(canvasEl, text){
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.onload = function(){
+      var wrap = canvasEl.parentElement;
+      var div = document.createElement('div');
+      div.style.width = '100%'; div.style.maxWidth = '320px';
+      wrap.replaceChild(div, canvasEl);
+      new QRCode(div, { text: text, width: 320, height: 320, colorDark:"#000000", colorLight:"#ffffff", correctLevel: QRCode.CorrectLevel.M });
+    };
+    document.head.appendChild(script);
   }
-  function drawOnCanvas(){
-    const tmp = document.createElement('div');
-    new QRCode(tmp, {
-      text: text,
-      width: canvas.width,
-      height: canvas.height,
-      colorDark:"#000000",
-      colorLight:"#ffffff",
-      correctLevel: QRCode.CorrectLevel.M
-    });
-    const img = tmp.querySelector('img') || tmp.querySelector('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    if(!img) return;
-    if(img.tagName === 'IMG'){
-      img.onload = ()=> ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      if(img.complete) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    }else{
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    }
-  }
-}
-
-// ===== Wallet Loader (GitHub Raw JSON) + Auto-Refresh =====
-const DB_URL = 'https://raw.githubusercontent.com/jojosstudio/bong/refs/heads/main/db.txt';
-const REFRESH_MS = 30000;
-
-const els = {
-  idText: document.getElementById('idText'),
-  btnCopy: document.getElementById('btnCopy'),
-  qrCanvas: document.getElementById('qrCanvas'),
-  balance: document.getElementById('balance'),
-  idType: document.getElementById('idType'),
-  status: document.getElementById('status'),
-  raw: document.getElementById('raw'),
-  btnReload: document.getElementById('btnReload'),
-  btnToggle: document.getElementById('btnToggle'),
-  autoText: document.getElementById('autoText'),
-  autoDot: document.getElementById('autoDot')
 };
 
-let showRaw = false;
-let autoInterval = null;
-let countdownInterval = null;
-let nextTs = 0;
-
-function isNumericId(id){ return /^\d+$/.test(id); }
-function isTokenId(id){ return /^TOKEN[_-]/.test(id); }
-
-function setStatus(text, level=''){
-  const dot = els.autoDot;
-  els.status.textContent = text;
-  dot.classList.remove('ok','warn','err');
-  if(level) dot.classList.add(level);
-}
-
-function renderAuto(){
-  if(!nextTs){
-    els.autoText.textContent = 'Auto-Refresh: aus';
-    return;
-  }
-  const rem = Math.max(0, Math.ceil((nextTs - Date.now())/1000));
-  els.autoText.textContent = `Auto-Refresh in ${rem}s`;
-}
-
-function startAuto(){
-  stopAuto();
-  nextTs = Date.now() + REFRESH_MS;
-  autoInterval = setInterval(()=> {
-    loadWallet(true);
-  }, REFRESH_MS);
-  countdownInterval = setInterval(renderAuto, 500);
-  renderAuto();
-  setStatus('Auto-Refresh aktiv', 'ok');
-}
-
-function stopAuto(){
-  if(autoInterval) clearInterval(autoInterval);
-  if(countdownInterval) clearInterval(countdownInterval);
-  autoInterval = countdownInterval = null;
-  nextTs = 0;
-  renderAuto();
-}
-
-// WICHTIG: existiert-Schlüssel-Check, damit 0 korrekt erkannt wird
-function hasKey(obj, key){
-  return Object.prototype.hasOwnProperty.call(obj, key);
-}
-
-async function loadWallet(noCache=false){
-  const id = els.idText.textContent.trim();
-  try{
-    setStatus('Lade Guthaben…');
-    const q = noCache ? `?t=${Date.now()}` : '';
-    const res = await fetch(DB_URL + q, { cache: 'no-store' });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    els.raw.textContent = text;
-
-    let data;
-    try{ data = JSON.parse(text); }
-    catch(e){ throw new Error('Ungültiges JSON'); }
-
-    const wallets = (data && typeof data === 'object' && data.wallets) ? data.wallets : {};
-
-    // KORREKTUR: Schlüssel-Existenz getrennt von Wert 0 behandeln
-    if(hasKey(wallets, id)){
-      const rawVal = wallets[id];            // kann 0 sein
-      const value = Number(rawVal);          // 0 bleibt 0
-      els.balance.textContent = String(Number.isFinite(value) ? value : 0);
-      setStatus('Geladen • ' + new Date().toLocaleTimeString(), 'ok');
-    }else{
-      // Konto nicht vorhanden
-      els.balance.textContent = '—';
-      setStatus('Keine Daten für diese ID gefunden • ' + new Date().toLocaleTimeString(), 'warn');
-    }
-
-    els.idType.textContent = isNumericId(id) ? 'Nummer' : (isTokenId(id) ? 'Token' : 'Unbekannt');
-
-  }catch(e){
-    setStatus('Fehler beim Laden: ' + e.message, 'err');
-    // Bei Fehler: Balance nicht überschreiben, damit Nutzer sieht, was vorher stand
-  }finally{
-    if(autoInterval){
-      nextTs = Date.now() + REFRESH_MS;
-      renderAuto();
-    }
-  }
-}
-
-(function init(){
+(function(){
   const id = loadOrCreateId();
-  els.idText.textContent = id;
+  document.getElementById('idText').textContent = id;
+  const canvas = document.getElementById('qrCanvas');
+  SimpleQR.renderCanvas(canvas, id);
 
-  drawQRCodeToCanvas(els.qrCanvas, id);
-
-  els.btnCopy.addEventListener('click', async ()=>{
+  document.getElementById('btnCopy').addEventListener('click', async ()=>{
     try{
       await navigator.clipboard.writeText(id);
-      showToast('Nummer kopiert');
-    }catch{
-      const ok = prompt('Kopiere die Nummer:', id);
-      if(ok !== null) showToast('Nummer bereit zum Kopieren');
+      alert('Nummer kopiert: ' + id);
+    }catch(e){
+      prompt('Kopiere die Nummer:', id);
     }
-  });
-
-  els.btnReload.addEventListener('click', ()=> loadWallet(true));
-  els.btnToggle.addEventListener('click', ()=>{
-    showRaw = !showRaw;
-    els.raw.style.display = showRaw ? 'block' : 'none';
-    els.btnToggle.textContent = showRaw ? 'Rohdaten ausblenden' : 'Rohdaten anzeigen';
-  });
-
-  // Initial laden + Auto-Refresh starten
-  loadWallet();
-  startAuto();
-
-  // Auto-Status-Badge toggelt Start/Stop
-  document.getElementById('autoInfo').addEventListener('click', ()=>{
-    if(autoInterval) { stopAuto(); setStatus('Auto-Refresh gestoppt', 'warn'); }
-    else { startAuto(); }
   });
 })();
 </script>
-
 </body>
 </html>
